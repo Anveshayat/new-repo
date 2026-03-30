@@ -2,7 +2,7 @@ trigger:
 - master
 
 pool:
- vmImage: ubantu-latest
+ vmImage: ubuntu-latest
 
 stages:
   - stage: A
