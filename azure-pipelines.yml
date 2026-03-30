@@ -1,11 +1,15 @@
 
-pool:
- vmImage: ubuntu-latest
 
 stages:
   - stage: A
+    pool:
+     vmImage: ubuntu-latest
+    displayName: "ubuntu"
     jobs:
       - job: Ajob
+        pool:
+          vmImage: windows-latest
+        displayName: "this is windows"
       - job: JobB
   - stage: B
     jobs:
