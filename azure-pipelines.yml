@@ -2,6 +2,7 @@
 
 stages:
   - stage: A
+  
     pool:
      vmImage: ubuntu-latest
     displayName: "ubuntu"
@@ -12,7 +13,13 @@ stages:
         displayName: "this is windows"
       - job: JobB
   - stage: B
+    
     jobs:
       - job: c
-        steps:
-          - script: "echo"
+
+  - stage: test
+    dependsOn: B
+    jobs:
+      - job: AQ
+    
+       
