@@ -8,6 +8,8 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  Sonarorganization: 'anveshayat3e23233'
+  SonarQube: 'SonarQubeCloud'
 
 stages:
 # ==================== BUILD STAGE ====================
@@ -26,6 +28,15 @@ stages:
       workingDirectory: 'AzureGitTest'
       displayName: 'Restore NuGet Packages'
 
+    - task: SonarCloudPrepare@4
+      inputs:
+        SonarQube: '$(SonarQube)'
+        organization: '$(Sonarorganization)'
+        scannerMode: 'dotnet'
+        projectKey: 'Anvesh_MyFirstApp'
+        projectName: 'MyFirstApp'
+      displayName: 'Prepare SonarQube Analysis'
+
     - script: dotnet build --configuration $(buildConfiguration)
       workingDirectory: 'AzureGitTest'
       displayName: 'Compile Code'
@@ -33,6 +44,14 @@ stages:
     - script: dotnet test --configuration $(buildConfiguration)
       workingDirectory: 'AzureGitTest'
       displayName: 'Execute Unit Tests'
+
+    - task: SonarCloudAnalyze@4
+      displayName: 'Run SonarQube Analysis'
+    
+    - task: SonarCloudPublish@4
+      inputs:
+        pollingTimeoutSec: '300'    
+      displayName: 'Publish SonarQube Results'
 
 - stage: Publish
   displayName: 'Publish Stage'
