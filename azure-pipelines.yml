@@ -1,25 +1,28 @@
+trigger:
+  - main
 
+pool:
+  vmImage: 'ubuntu-latest'
 
-stages:
-  - stage: A
-  
-    pool:
-     vmImage: ubuntu-latest
-    displayName: "ubuntu"
-    jobs:
-      - job: Ajob
-        pool:
-          vmImage: windows-latest
-        displayName: "this is windows"
-      - job: JobB
-  - stage: B
-    
-    jobs:
-      - job: c
+steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: 'sdk'
+      version: '8.0.x'
 
-  - stage: test
-    dependsOn: B
-    jobs:
-      - job: AQ
-    
-       
+  - script: dotnet restore
+    displayName: 'Restore'
+
+  - script: dotnet build --configuration Release --no-restore
+    displayName: 'Build'
+
+  - script: dotnet test --configuration Release --no-build --verbosity normal
+    displayName: 'Test'
+
+  - script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)
+    displayName: 'Publish'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'published-app'
