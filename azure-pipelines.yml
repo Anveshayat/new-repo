@@ -1,28 +1,64 @@
 trigger:
-  - main
+  branches:
+    include:
+      - '*'
 
 pool:
-  vmImage: 'ubuntu-latest'
+  # vmImage: ubuntu-latest
+  name: Default
 
-steps:
-  - task: UseDotNet@2
-    inputs:
-      packageType: 'sdk'
-      version: '8.0.x'
+variables:
+  buildConfiguration: 'Release'
 
-  - script: dotnet restore
-    displayName: 'Restore'
+stages:
+# ==================== BUILD STAGE ====================
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build and Test'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+      displayName: 'Install .NET 8.0 SDK'
+    
+    - script: dotnet restore
+      displayName: 'Restore NuGet Packages'
 
-  - script: dotnet build --configuration Release --no-restore
-    displayName: 'Build'
 
-  - script: dotnet test --configuration Release --no-build --verbosity normal
-    displayName: 'Test'
+    - script: dotnet build --configuration $(buildConfiguration)
+      displayName: 'Compile Code'
+    
+    - script: dotnet test --configuration $(buildConfiguration)
+      displayName: 'Execute Unit Tests'
 
-  - script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)
-    displayName: 'Publish'
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'published-app'
+- stage: Publish
+  displayName: 'Publish Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: PublishJob
+    displayName: 'Publish Artifacts'
+    steps:
+    # Publish the application
+    - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+      displayName: 'Publish Application'
+    
+    # Create a zip file from published files
+    - task: ArchiveFiles@2
+      displayName: 'Create Zip Package'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+        replaceExistingArchive: true
+    
+    # Upload the zip file as artifact
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+        ArtifactName: 'drop'
+      displayName: 'Upload Artifacts'
