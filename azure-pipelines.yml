@@ -5,7 +5,6 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
-  # name: Default
 
 variables:
   buildConfiguration: 'Release'
@@ -25,13 +24,15 @@ stages:
       displayName: 'Install .NET 8.0 SDK'
     
     - script: dotnet restore
+      workingDirectory: 'AzureGitTest'
       displayName: 'Restore NuGet Packages'
 
-
     - script: dotnet build --configuration $(buildConfiguration)
+      workingDirectory: 'AzureGitTest'
       displayName: 'Compile Code'
     
     - script: dotnet test --configuration $(buildConfiguration)
+      workingDirectory: 'AzureGitTest'
       displayName: 'Execute Unit Tests'
 
 - stage: Publish
@@ -44,6 +45,7 @@ stages:
     steps:
     # Publish the application
     - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+      workingDirectory: 'AzureGitTest'
       displayName: 'Publish Application'
     
     # Create a zip file from published files
