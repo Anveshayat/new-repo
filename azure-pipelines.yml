@@ -1,0 +1,65 @@
+trigger:
+  branches:
+    include:
+      - '*'
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+# ==================== BUILD STAGE ====================
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build and Test'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+      displayName: 'Install .NET 8.0 SDK'
+    
+    - script: dotnet restore
+      workingDirectory: 'AzureGitTest'
+      displayName: 'Restore NuGet Packages'
+
+    - script: dotnet build --configuration $(buildConfiguration)
+      workingDirectory: 'AzureGitTest'
+      displayName: 'Compile Code'
+    
+    - script: dotnet test --configuration $(buildConfiguration)
+      workingDirectory: 'AzureGitTest'
+      displayName: 'Execute Unit Tests'
+
+- stage: Publish
+  displayName: 'Publish Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: PublishJob
+    displayName: 'Publish Artifacts'
+    steps:
+    # Publish the application
+    - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+      workingDirectory: 'AzureGitTest'
+      displayName: 'Publish Application'
+    
+    # Create a zip file from published files
+    - task: ArchiveFiles@2
+      displayName: 'Create Zip Package'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+        replaceExistingArchive: true
+    
+    # Upload the zip file as artifact
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+        ArtifactName: 'drop'
+      displayName: 'Upload Artifacts'
