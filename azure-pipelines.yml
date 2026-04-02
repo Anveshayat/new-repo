@@ -8,7 +8,7 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  Sonarorganization: 'anveshmyfirstapp'
+  Sonarorganization: 'anveshayat'
   SonarConnection: 'sonarconnection'
 
 stages:
