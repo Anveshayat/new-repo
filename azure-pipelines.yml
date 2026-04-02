@@ -9,7 +9,7 @@ pool:
 variables:
   buildConfiguration: 'Release'
   Sonarorganization: 'anveshmyfirstapp'
-  SonarQube: 'sonarconnection'
+  SonarConnection: 'sonarconnection'   # ✅ Renamed to avoid conflict
 
 stages:
 - stage: Build
@@ -18,26 +18,27 @@ stages:
   - job: BuildJob
     displayName: 'Build and Test'
     steps:
+
     - task: UseDotNet@2
+      displayName: 'Install .NET 8.0 SDK'
       inputs:
         packageType: 'sdk'
-      displayName: 'Install .NET 8.0 SDK'
-    
+        version: '8.x'               # ✅ Added missing version
+
     - script: dotnet restore
       workingDirectory: 'AzureGitTest'
       displayName: 'Restore NuGet Packages'
 
     - task: SonarCloudPrepare@4
+      displayName: 'Prepare SonarQube Analysis'
       inputs:
-        SonarQube: '$(SonarQube)'
+        SonarCloud: '$(SonarConnection)'   # ✅ Fixed: use SonarCloud not SonarQube
         organization: '$(Sonarorganization)'
         scannerMode: 'dotnet'
         projectKey: 'Anvesh_MyFirstApp'
         projectName: 'MyFirstApp'
         extraProperties: |
-          sonar.host.url=https://sonarcloud.io
-          sonar.scanner.skipJreProvisioning=true
-      displayName: 'Prepare SonarQube Analysis'
+          sonar.scanner.skipJreProvisioning=true   # ✅ Removed sonar.host.url
 
     - script: dotnet build --configuration $(buildConfiguration)
       workingDirectory: 'AzureGitTest'
@@ -51,9 +52,9 @@ stages:
       displayName: 'Run SonarQube Analysis'
     
     - task: SonarCloudPublish@4
+      displayName: 'Publish SonarQube Results'
       inputs:
         pollingTimeoutSec: '300'    
-      displayName: 'Publish SonarQube Results'
 
 - stage: Publish
   displayName: 'Publish Stage'
@@ -77,7 +78,7 @@ stages:
         replaceExistingArchive: true
     
     - task: PublishBuildArtifacts@1
+      displayName: 'Upload Artifacts'
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
         ArtifactName: 'drop'
-      displayName: 'Upload Artifacts'
