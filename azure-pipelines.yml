@@ -9,7 +9,7 @@ pool:
 variables:
   buildConfiguration: 'Release'
   Sonarorganization: 'anveshmyfirstapp'
-  SonarConnection: 'sonarconnection'   # ✅ Renamed to avoid conflict
+  SonarConnection: 'sonarconnection'
 
 stages:
 - stage: Build
@@ -23,7 +23,7 @@ stages:
       displayName: 'Install .NET 8.0 SDK'
       inputs:
         packageType: 'sdk'
-        version: '8.x'               # ✅ Added missing version
+        version: '8.0.x'            # ✅ More specific version format
 
     - script: dotnet restore
       workingDirectory: 'AzureGitTest'
@@ -32,13 +32,12 @@ stages:
     - task: SonarCloudPrepare@4
       displayName: 'Prepare SonarQube Analysis'
       inputs:
-        SonarCloud: '$(SonarConnection)'   # ✅ Fixed: use SonarCloud not SonarQube
+        SonarCloud: '$(SonarConnection)'
         organization: '$(Sonarorganization)'
         scannerMode: 'dotnet'
         projectKey: 'Anvesh_MyFirstApp'
         projectName: 'MyFirstApp'
-        extraProperties: |
-          sonar.scanner.skipJreProvisioning=true   # ✅ Removed sonar.host.url
+        # ✅ Removed extraProperties completely - was causing issues
 
     - script: dotnet build --configuration $(buildConfiguration)
       workingDirectory: 'AzureGitTest'
@@ -64,6 +63,12 @@ stages:
   - job: PublishJob
     displayName: 'Publish Artifacts'
     steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET 8.0 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'            # ✅ Also needed in Publish stage
+
     - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
       workingDirectory: 'AzureGitTest'
       displayName: 'Publish Application'
