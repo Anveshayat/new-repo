@@ -35,8 +35,8 @@ stages:
         SonarCloud: '$(SonarConnection)'
         organization: '$(Sonarorganization)'
         scannerMode: 'dotnet'
-        projectKey: 'Anvesh_MyFirstApp'
-        projectName: 'MyFirstApp'
+        projectKey: 'Anveshayat_new-repo'
+        projectName: 'new-repo'
         # ✅ Removed extraProperties completely - was causing issues
 
     - script: dotnet build --configuration $(buildConfiguration)
