@@ -68,7 +68,7 @@ namespace AzureGitTest.Controllers
                 }
                 else
                 {
-                    return Unauthorized("Invalid usernames or passwords");
+                    return Unauthorized("Invalid username or password");
                 }
             }
         }
