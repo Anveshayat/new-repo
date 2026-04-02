@@ -12,7 +12,6 @@ variables:
   SonarQube: 'SonarQubeCloud'
 
 stages:
-# ==================== BUILD STAGE ====================
 - stage: Build
   displayName: 'Build Stage'
   jobs:
@@ -35,6 +34,9 @@ stages:
         scannerMode: 'dotnet'
         projectKey: 'Anvesh_MyFirstApp'
         projectName: 'MyFirstApp'
+        extraProperties: |
+          sonar.host.url=https://sonarcloud.io
+          sonar.scanner.skipJreProvisioning=true
       displayName: 'Prepare SonarQube Analysis'
 
     - script: dotnet build --configuration $(buildConfiguration)
@@ -61,12 +63,10 @@ stages:
   - job: PublishJob
     displayName: 'Publish Artifacts'
     steps:
-    # Publish the application
     - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
       workingDirectory: 'AzureGitTest'
       displayName: 'Publish Application'
     
-    # Create a zip file from published files
     - task: ArchiveFiles@2
       displayName: 'Create Zip Package'
       inputs:
@@ -76,7 +76,6 @@ stages:
         archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
         replaceExistingArchive: true
     
-    # Upload the zip file as artifact
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
