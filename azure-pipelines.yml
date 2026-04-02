@@ -8,7 +8,7 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  Sonarorganization: 'Anveshayat'
+  Sonarorganization: 'anveshayat'
   SonarQube: 'SonarQubeCloud'
 
 stages:
