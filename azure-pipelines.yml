@@ -4,7 +4,7 @@ trigger:
       - '*'
 
 pool:
-  vmImage: ubuntu-latest 
+  vmImage: ubuntu-latest
 
 variables:
   buildConfiguration: 'Release'
@@ -12,117 +12,111 @@ variables:
   SonarConnection: 'sonarconnection'
 
 stages:
-- stage: Build
-  displayName: 'Build Stage'
-  jobs:
-  - job: BuildJob
-    displayName: 'Build and Test'
-    steps:
-
-    - task: UseDotNet@2
-      displayName: 'Install .NET 8.0 SDK'
-      inputs:
-        packageType: 'sdk'
-        version: '8.0.x'            # ✅ More specific version format
-
-    - script: dotnet restore
-      workingDirectory: 'AzureGitTest'
-      displayName: 'Restore NuGet Packages'
-
-    - task: SonarCloudPrepare@4
-      displayName: 'Prepare SonarQube Analysis'
-      inputs:
-        SonarCloud: '$(SonarConnection)'
-        organization: '$(Sonarorganization)'
-        scannerMode: 'dotnet'
-        projectKey: 'Anveshayat_new-repo'
-        projectName: 'new-repo'
-        # ✅ Removed extraProperties completely - was causing issues
-
-    - script: dotnet build --configuration $(buildConfiguration)
-      workingDirectory: 'AzureGitTest'
-      displayName: 'Compile Code'
-    
-    - script: dotnet test --configuration $(buildConfiguration)
-      workingDirectory: 'AzureGitTest'
-      displayName: 'Execute Unit Tests'
-
-    - task: SonarCloudAnalyze@4
-      displayName: 'Run SonarQube Analysis'
-    
-    - task: SonarCloudPublish@4
-      displayName: 'Publish SonarQube Results'
-      inputs:
-        pollingTimeoutSec: '300'    
-
-- stage: Publish
-  displayName: 'Publish Stage'
-  dependsOn: Build
-  condition: succeeded()
-  jobs:
-  - job: PublishJob
-    displayName: 'Publish Artifacts'
-    steps:
-    - task: UseDotNet@2
-      displayName: 'Install .NET 8.0 SDK'
-      inputs:
-        packageType: 'sdk'
-        version: '8.0.x'            # ✅ Also needed in Publish stage
-
-    - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
-      workingDirectory: 'AzureGitTest'
-      displayName: 'Publish Application'
-    
-    - task: ArchiveFiles@2
-      displayName: 'Create Zip Package'
-      inputs:
-        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
-        replaceExistingArchive: true
-    
-    - task: PublishBuildArtifacts@1
-      displayName: 'Upload Artifacts'
-      inputs:
-        PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
-        ArtifactName: 'drop'
-
-
-# this is for cd
-
-- stage: Deploy
-  displayName: 'Deploy to Azure'
-  dependsOn: Publish
-  condition: succeeded()
-  jobs:
-  - deployment: DeployToAzure
-    displayName: 'Deploy Application to Azure App Service'
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          # STEP 1: Download the artifact
-          - task: DownloadBuildArtifacts@1
-            displayName: 'Download Artifacts from Cloud'
+  - stage: Build
+    displayName: 'Build Stage'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build and Test'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET 8.0 SDK'
             inputs:
-              buildType: 'current'
-              artifactName: 'drop'
-              downloadPath: '$(Pipeline.Workspace)'
-          
-          # Debug: Show what was downloaded
-          - script: |
-              echo "=== Downloaded files ==="
-              dir /s $(Pipeline.Workspace)
-            displayName: 'List downloaded files'
-          
-          # STEP 2: Deploy the zip to Azure
-          - task: AzureWebApp@1
-            displayName: 'Deploy Web App to Azure'
+              packageType: 'sdk'
+              version: '8.0.x'
+
+          - script: dotnet restore
+            workingDirectory: 'AzureGitTest'
+            displayName: 'Restore NuGet Packages'
+
+          - task: SonarCloudPrepare@4
+            displayName: 'Prepare SonarQube Analysis'
             inputs:
-              azureSubscription: 'AzurePractice-Prod-Connection'
-              appType: 'webApp'
-              appName: 'AnveshAppService'
-              package: '$(Pipeline.Workspace)/drop/app.zip'
-              deploymentMethod: 'zipDeploy'
+              SonarCloud: '$(SonarConnection)'
+              organization: '$(Sonarorganization)'
+              scannerMode: 'dotnet'
+              projectKey: 'Anveshayat_new-repo'
+              projectName: 'new-repo'
+
+          - script: dotnet build --configuration $(buildConfiguration)
+            workingDirectory: 'AzureGitTest'
+            displayName: 'Compile Code'
+
+          - script: dotnet test --configuration $(buildConfiguration)
+            workingDirectory: 'AzureGitTest'
+            displayName: 'Execute Unit Tests'
+
+          - task: SonarCloudAnalyze@4
+            displayName: 'Run SonarQube Analysis'
+
+          - task: SonarCloudPublish@4
+            displayName: 'Publish SonarQube Results'
+            inputs:
+              pollingTimeoutSec: '300'
+
+  - stage: Publish
+    displayName: 'Publish Stage'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: PublishJob
+        displayName: 'Publish Artifacts'
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET 8.0 SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '8.0.x'
+
+          - script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
+            workingDirectory: 'AzureGitTest'
+            displayName: 'Publish Application'
+
+          - task: ArchiveFiles@2
+            displayName: 'Create Zip Package'
+            inputs:
+              rootFolderOrFile: '$(Build.ArtifactStagingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Upload Artifacts'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
+              ArtifactName: 'drop'
+
+  - stage: Deploy
+    displayName: 'Deploy to Azure'
+    dependsOn: Publish
+    condition: succeeded()
+    jobs:
+      - deployment: DeployToAzure
+        displayName: 'Deploy Application to Azure App Service'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: none
+
+                - task: DownloadBuildArtifacts@1
+                  displayName: 'Download Artifacts from Cloud'
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'drop'
+                    downloadPath: '$(Pipeline.Workspace)'
+
+                - script: |
+                    echo "=== Downloaded files ==="
+                    find $(Pipeline.Workspace) -type f
+                  displayName: 'List downloaded files'
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy Web App to Azure'
+                  inputs:
+                    azureSubscription: 'AzurePractice-Prod-Connection'
+                    appType: 'webApp'
+                    appName: 'AnveshAppService'
+                    package: '$(Pipeline.Workspace)/drop/app.zip'
+                    deploymentMethod: 'zipDeploy'
