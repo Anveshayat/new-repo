@@ -87,3 +87,42 @@ stages:
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/app.zip'
         ArtifactName: 'drop'
+
+
+# this is for cd
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: Publish
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToAzure
+    displayName: 'Deploy Application to Azure App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          # STEP 1: Download the artifact
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Artifacts from Cloud'
+            inputs:
+              buildType: 'current'
+              artifactName: 'drop'
+              downloadPath: '$(Pipeline.Workspace)'
+          
+          # Debug: Show what was downloaded
+          - script: |
+              echo "=== Downloaded files ==="
+              dir /s $(Pipeline.Workspace)
+            displayName: 'List downloaded files'
+          
+          # STEP 2: Deploy the zip to Azure
+          - task: AzureWebApp@1
+            displayName: 'Deploy Web App to Azure'
+            inputs:
+              azureSubscription: 'AzurePractice-Prod-Connection'
+              appType: 'webApp'
+              appName: 'AnveshAppService'
+              package: '$(Pipeline.Workspace)/drop/app.zip'
+              deploymentMethod: 'zipDeploy'
